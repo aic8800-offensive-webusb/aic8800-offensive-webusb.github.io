@@ -2918,6 +2918,23 @@ portalHttpResponse(requestPayload) {
 	const portal = this.apPortal;
 	const request = new TextDecoder("ascii").decode(requestPayload || new Uint8Array(0));
 	const headOnly = request.startsWith("HEAD ");
+	/* parse the request line "METHOD PATH HTTP/x.y" to get the path */
+	const requestLine = request.split("\r\n", 1)[0] || "";
+	const lineParts = requestLine.split(" ");
+	const path = lineParts.length >= 2 ? lineParts[1] : "/";
+	const portalRoot = "http://192.168.77.1/"; // test
+	const isPortalPage = path === "/" || path === "/index.html" || path === "/portal" || path === "/portal.html";
+	if (!isPortalPage) {
+		const location = (portal && portal.url) ? portal.url : portalRoot;
+		return new TextEncoder().encode(
+			"HTTP/1.1 302 Found\r\n" +
+			"Location: " + location + "\r\n" +
+			"Content-Type: text/html; charset=utf-8\r\n" +
+			"Content-Length: 0\r\n" +
+			"Cache-Control: no-store\r\n" +
+			"Connection: close\r\n\r\n"
+		);
+	}
 	const bodyText = renderCaptiveHtml(portal);
 	const body = new TextEncoder().encode(bodyText);
 	/* hardcode here a minimal http header */
